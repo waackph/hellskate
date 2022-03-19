@@ -12,6 +12,9 @@ public class Player : MonoBehaviour
     [SerializeField] float jumpGravityUp;
     [SerializeField] float jumpGravityDown;
     [SerializeField] float buttonTime;
+    [SerializeField] float waitForCombi;
+    [SerializeField] float minHeight;
+
     Rigidbody2D rigidBody;
 
     Lane currentLane;
@@ -19,36 +22,50 @@ public class Player : MonoBehaviour
     bool isUpper = false;
     float jumpTime;
 
+    // Variables to wait for combinations
+    float combiTime;
+    bool isInCombiMode = false;
+    List<string> combiKeyList;
+
     // State (switch lane, jump) variables
     bool isInSwitchMode = false;
     bool isJumpingUp = false;
     bool isInJumpMode = false;
+    float jumpStartPosition;
 
     // Start is called before the first frame update
     void Start()
     {
+        combiKeyList = new List<string>();
         rigidBody = GetComponent<Rigidbody2D>();
         currentLane = laneSystem.GetComponent<LaneController>().CurrentLane;
+        jumpStartPosition = currentLane.LaneYPosition;
         HandleLaneCollision();
     }
 
+    // Todo: Wait 0.5 seconds to allow key combinations (switch lane while jump) 
+    // look at jumpTime to see how to wait for some time
     // Update is called once per frame
     void Update()
     {
-        if(!isInSwitchMode && !isInJumpMode)
+        if(!isInJumpMode)
         {
             checkJumpWithVelocity();
         }
-        if(!isInJumpMode && !isInSwitchMode)
+        if(!isInSwitchMode)
         {
             checkSwitchLanes();
+        }
+        if(!isInCombiMode)
+        {
+            checkAnyKeyPressed();
         }
     }
 
     void FixedUpdate()
     {
         movePlayer();
-        if(isInSwitchMode)
+        if(isInSwitchMode && !isInJumpMode)
         {
             doMoveToLane();
         }
@@ -56,10 +73,28 @@ public class Player : MonoBehaviour
         {
             doJump();
         }
+        // TODO: Execute an appropriate animation and score when combi is evaluated.
+        if(isInCombiMode)
+        {
+            checkForCombi();
+        }
+    }
+
+    void checkAnyKeyPressed()
+    {
+        if(Input.anyKey)
+        {
+            // Initilize combi mode start
+            combiTime = 0f;
+            isInCombiMode = true;
+            combiKeyList.Clear();
+            checkForCombi();
+        }
     }
 
     void OnCollisionEnter2D(Collision2D collision)
     {
+        // TODO: Decide if died or not depending on entry point of collision (e.g. in front, from below and not jump = death)
         Debug.Log("YOU DIED!");
     }
 
@@ -115,10 +150,10 @@ public class Player : MonoBehaviour
 
     void doMoveToLane()
     {
-        if((currentLane.LaneYPosition <= GetComponent<Transform>().position.y && isUpper) || (currentLane.LaneYPosition >= GetComponent<Transform>().position.y && !isUpper))
+        if((currentLane.LaneYPosition <= rigidBody.transform.position.y && isUpper) || (currentLane.LaneYPosition >= rigidBody.transform.position.y && !isUpper))
         {
             isInSwitchMode = false;
-            GetComponent<Transform>().position = new Vector3(GetComponent<Transform>().position.x, currentLane.LaneYPosition, 0);
+            rigidBody.transform.position = new Vector3(rigidBody.transform.position.x, currentLane.LaneYPosition, 0);
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
         }
         else
@@ -132,17 +167,50 @@ public class Player : MonoBehaviour
 
     void checkJumpWithVelocity()
     {
-        if (Input.GetKeyDown(KeyCode.Space) && GetComponent<Transform>().position.y == currentLane.LaneYPosition) 
+        if (Input.GetKeyDown(KeyCode.Space))  // && rigidBody.transform.position.y == currentLane.LaneYPosition) 
         {
+            // Initilize jump start
             isJumpingUp = true;
             isInJumpMode = true;
             jumpTime = 0;
+            jumpStartPosition = rigidBody.transform.position.y;
+        }
+    }
+
+    void checkForCombi()
+    {
+        combiTime += Time.deltaTime;
+        if(Input.GetKeyDown(KeyCode.X))
+        {
+            combiKeyList.Add(KeyCode.X.ToString());
+        }
+        if(Input.GetKeyDown(KeyCode.Space))
+        {
+            combiKeyList.Add(KeyCode.Space.ToString());
+        }
+
+        if(combiTime > waitForCombi)
+        {
+            isInCombiMode = false;
+            evaluatedCombi();
+        }
+    }
+
+    void evaluatedCombi()
+    {
+        if(combiKeyList.Contains(KeyCode.Space.ToString()))
+        {
+            if(combiKeyList.Contains(KeyCode.X.ToString()))
+            {
+                Debug.Log("Combi!");
+                Debug.Log(combiKeyList.Count);
+            }
         }
     }
 
     void doJump()
     {
-        if((Input.GetKeyUp(KeyCode.Space) | jumpTime > buttonTime) && GetComponent<Transform>().position.y != currentLane.LaneYPosition)
+        if((Input.GetKeyUp(KeyCode.Space) | jumpTime > buttonTime) && Mathf.Abs((Mathf.Abs(jumpStartPosition) - Mathf.Abs(rigidBody.transform.position.y))) >= minHeight && rigidBody.transform.position.y != currentLane.LaneYPosition)
         {
             isJumpingUp = false;
             rigidBody.gravityScale = jumpGravityUp;
@@ -152,11 +220,11 @@ public class Player : MonoBehaviour
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpHeight);
             jumpTime += Time.deltaTime;
         }
-        if(GetComponent<Transform>().position.y < currentLane.LaneYPosition && isInJumpMode)
+        if(rigidBody.transform.position.y <= currentLane.LaneYPosition && isInJumpMode && !isJumpingUp)
         {
             rigidBody.gravityScale = 0;
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
-            GetComponent<Transform>().position = new Vector3(GetComponent<Transform>().position.x, currentLane.LaneYPosition, 0);
+            rigidBody.transform.position = new Vector3(rigidBody.transform.position.x, currentLane.LaneYPosition, 0);
             isInJumpMode = false;
         }
     }
@@ -173,11 +241,11 @@ public class Player : MonoBehaviour
         }
         if(rigidBody.velocity.y <= 0 && isJumpingUp)
         {
-            if(GetComponent<Transform>().position.y <= currentLane.LaneYPosition)
+            if(rigidBody.transform.position.y <= currentLane.LaneYPosition)
             {
                 rigidBody.gravityScale = 0;
                 rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
-                GetComponent<Transform>().position = new Vector3(GetComponent<Transform>().position.x, currentLane.LaneYPosition, 0);
+                rigidBody.transform.position = new Vector3(rigidBody.transform.position.x, currentLane.LaneYPosition, 0);
                 isJumpingUp = false;
             }
             else
