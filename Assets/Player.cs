@@ -16,6 +16,7 @@ public class Player : MonoBehaviour
     [SerializeField] float minHeight;
 
     Rigidbody2D rigidBody;
+    SpriteRenderer spriteRenderer;
 
     Lane currentLane;
 
@@ -25,7 +26,7 @@ public class Player : MonoBehaviour
     // Variables to wait for combinations
     float combiTime;
     bool isInCombiMode = false;
-    List<string> combiKeyList;
+    List<KeyCode> combiKeyList;
 
     // State (switch lane, jump) variables
     bool isInSwitchMode = false;
@@ -36,26 +37,17 @@ public class Player : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        combiKeyList = new List<string>();
+        combiKeyList = new List<KeyCode>();
         rigidBody = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
         currentLane = laneSystem.GetComponent<LaneController>().CurrentLane;
         jumpStartPosition = currentLane.LaneYPosition;
-        HandleLaneCollision();
+        HandleLaneCollision(currentLane.Name);
     }
 
-    // Todo: Wait 0.5 seconds to allow key combinations (switch lane while jump) 
-    // look at jumpTime to see how to wait for some time
     // Update is called once per frame
     void Update()
     {
-        if(!isInJumpMode)
-        {
-            checkJumpWithVelocity();
-        }
-        if(!isInSwitchMode)
-        {
-            checkSwitchLanes();
-        }
         if(!isInCombiMode)
         {
             checkAnyKeyPressed();
@@ -69,6 +61,11 @@ public class Player : MonoBehaviour
         {
             doMoveToLane();
         }
+        // TODO: Add case that player is on top of an obstacle 
+        // (then also gravity=0 and isInJumpMode=false, 
+        // but when leaving the obstacle the player should drop to the lane)
+        // TODO: Maybe we should try to use colliders for lanes, 
+        // then having less gravity issues and make use of full physics feature.
         if(isInJumpMode)
         {
             doJump();
@@ -94,8 +91,45 @@ public class Player : MonoBehaviour
 
     void OnCollisionEnter2D(Collision2D collision)
     {
-        // TODO: Decide if died or not depending on entry point of collision (e.g. in front, from below and not jump = death)
-        Debug.Log("YOU DIED!");
+        // TODO: Decide if died or not depending on entry point of collision 
+        // (e.g. in front, from below and not jump = death)
+        if(collision.gameObject.tag.Equals("Obstacle"))
+        {
+            Vector2 hit = collision.contacts[0].normal;
+            Debug.Log(hit);
+            Debug.Log(Vector2.up);
+            float angle = Vector2.Angle(hit, Vector2.up);
+
+            if(Mathf.Approximately(angle, 0))
+            {
+                Debug.Log("Up");
+            }
+            if(Mathf.Approximately(angle, 180))
+            {
+                Debug.Log("Down");
+                Debug.Log("GAME OVER!");
+            }
+            if(Mathf.Approximately(angle, 90))
+            {
+                // Sides of the obstacle
+                // Perpendicular = senkrecht (to the other two vectors, similar to 3D Cross Product)
+                Vector2 perpendicularVec = Vector2.Perpendicular(hit);
+                Debug.Log(Vector2.Perpendicular(hit));
+                // Vector3 cross = Vector3.Cross(Vector3.forward, new Vector3(hit.x, hit.y, 0));
+                // Debug.Log(cross);
+                if(perpendicularVec.y > 0)
+                {
+                    Debug.Log("Right");
+                    Debug.Log("GAME OVER!");
+                }
+                else
+                {
+                    Debug.Log("Left");
+                    Debug.Log("GAME OVER!");
+                }
+            }
+            
+        }
     }
 
     void movePlayer()
@@ -104,15 +138,14 @@ public class Player : MonoBehaviour
         rigidBody.velocity = new Vector2(movementSpeed + moveX * moveImpact, rigidBody.velocity.y);
     }
 
-    void checkSwitchLanes()
+    void checkSwitchLanes(KeyCode key)
     {
-        float moveY = Input.GetAxis("Vertical");
-        if(moveY > 0)
+        if(key == KeyCode.UpArrow)
         {
             isUpper = true;
             switchLane(laneUp:isUpper);
         }
-        else if(moveY < 0)
+        else if(key == KeyCode.DownArrow)
         {
             isUpper = false;
             switchLane(laneUp:isUpper);
@@ -123,24 +156,25 @@ public class Player : MonoBehaviour
     {
         isInSwitchMode = true;
         currentLane = laneSystem.GetComponent<LaneController>().SwitchLane(laneUp);
-        HandleLaneCollision();
+        HandleLaneCollision(currentLane.Name);
     }
 
-    void HandleLaneCollision()
+    void HandleLaneCollision(string currentLayer)
     {
-        if(currentLane.Name == "Lane1")
+        spriteRenderer.sortingLayerName = currentLayer;
+        if(currentLayer == "Lane1")
         {
             Physics2D.IgnoreLayerCollision(0, 6, false);
             Physics2D.IgnoreLayerCollision(0, 7, true);
             Physics2D.IgnoreLayerCollision(0, 8, true);
         }
-        else if(currentLane.Name == "Lane2")
+        else if(currentLayer == "Lane2")
         {
             Physics2D.IgnoreLayerCollision(0, 6, true);
             Physics2D.IgnoreLayerCollision(0, 7, false);
             Physics2D.IgnoreLayerCollision(0, 8, true);
         }
-        else if(currentLane.Name == "Lane3")
+        else if(currentLayer == "Lane3")
         {
             Physics2D.IgnoreLayerCollision(0, 6, true);
             Physics2D.IgnoreLayerCollision(0, 7, true);
@@ -167,14 +201,11 @@ public class Player : MonoBehaviour
 
     void checkJumpWithVelocity()
     {
-        if (Input.GetKeyDown(KeyCode.Space))  // && rigidBody.transform.position.y == currentLane.LaneYPosition) 
-        {
-            // Initilize jump start
-            isJumpingUp = true;
-            isInJumpMode = true;
-            jumpTime = 0;
-            jumpStartPosition = rigidBody.transform.position.y;
-        }
+        // Initilize jump start
+        isJumpingUp = true;
+        isInJumpMode = true;
+        jumpTime = 0;
+        jumpStartPosition = rigidBody.transform.position.y;
     }
 
     void checkForCombi()
@@ -182,11 +213,19 @@ public class Player : MonoBehaviour
         combiTime += Time.deltaTime;
         if(Input.GetKeyDown(KeyCode.X))
         {
-            combiKeyList.Add(KeyCode.X.ToString());
+            combiKeyList.Add(KeyCode.X);
         }
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            combiKeyList.Add(KeyCode.Space.ToString());
+            combiKeyList.Add(KeyCode.Space);
+        }
+        if(Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            combiKeyList.Add(KeyCode.UpArrow);
+        }
+        if(Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            combiKeyList.Add(KeyCode.DownArrow);
         }
 
         if(combiTime > waitForCombi)
@@ -198,13 +237,23 @@ public class Player : MonoBehaviour
 
     void evaluatedCombi()
     {
-        if(combiKeyList.Contains(KeyCode.Space.ToString()))
+        if(combiKeyList.Contains(KeyCode.Space))
         {
-            if(combiKeyList.Contains(KeyCode.X.ToString()))
+            checkJumpWithVelocity();
+            Debug.Log(combiKeyList.Count);
+            if(combiKeyList.Contains(KeyCode.X))
             {
                 Debug.Log("Combi!");
                 Debug.Log(combiKeyList.Count);
             }
+        }
+        if(combiKeyList.Contains(KeyCode.UpArrow))
+        {
+            checkSwitchLanes(KeyCode.UpArrow);
+        }
+        else if(combiKeyList.Contains(KeyCode.DownArrow))
+        {
+            checkSwitchLanes(KeyCode.DownArrow);
         }
     }
 
@@ -214,11 +263,21 @@ public class Player : MonoBehaviour
         {
             isJumpingUp = false;
             rigidBody.gravityScale = jumpGravityUp;
+            if(isInSwitchMode)
+            {
+                // Enable collisions again
+                GetComponent<BoxCollider2D>().enabled = true;
+            }
         }
         if(isJumpingUp)
         {
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, jumpHeight);
             jumpTime += Time.deltaTime;
+            if(isInSwitchMode && GetComponent<BoxCollider2D>().enabled)
+            {
+                // Disable collisions
+                GetComponent<BoxCollider2D>().enabled = false;
+            }
         }
         if(rigidBody.transform.position.y <= currentLane.LaneYPosition && isInJumpMode && !isJumpingUp)
         {
