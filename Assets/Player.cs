@@ -64,8 +64,10 @@ public class Player : MonoBehaviour
         // TODO: Add case that player is on top of an obstacle 
         // (then also gravity=0 and isInJumpMode=false, 
         // but when leaving the obstacle the player should drop to the lane)
-        // TODO: Maybe we should try to use colliders for lanes, 
+        // Idea: Maybe we should try to use colliders for lanes, 
         // then having less gravity issues and make use of full physics feature.
+        // But on the other hand, switching lanes using colliders might be a pain 
+        // and may be also unprecise, not sure. 
         if(isInJumpMode)
         {
             doJump();
