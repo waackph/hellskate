@@ -21,6 +21,7 @@ public class Player : MonoBehaviour
     Lane currentLane;
 
     bool isUpper = false;
+    bool playerIsOnObstacle = false;
     float jumpTime;
 
     // Variables to wait for combinations
@@ -57,17 +58,16 @@ public class Player : MonoBehaviour
     void FixedUpdate()
     {
         movePlayer();
-        if(isInSwitchMode && !isInJumpMode)
+        if(isInSwitchMode && !isInJumpMode && !playerIsOnObstacle)
         {
             doMoveToLane();
         }
-        // TODO: Add case that player is on top of an obstacle 
-        // (then also gravity=0 and isInJumpMode=false, 
-        // but when leaving the obstacle the player should drop to the lane)
         // Idea: Maybe we should try to use colliders for lanes, 
-        // then having less gravity issues and make use of full physics feature.
+        // then having less gravity issues, more unity-like solution maybe
+        // and make use of full physics feature.
         // But on the other hand, switching lanes using colliders might be a pain 
         // and may be also unprecise, not sure. 
+        // Other non-hacky solution would be to completely drop phyisics...
         if(isInJumpMode)
         {
             doJump();
@@ -98,13 +98,12 @@ public class Player : MonoBehaviour
         if(collision.gameObject.tag.Equals("Obstacle"))
         {
             Vector2 hit = collision.contacts[0].normal;
-            Debug.Log(hit);
-            Debug.Log(Vector2.up);
             float angle = Vector2.Angle(hit, Vector2.up);
 
             if(Mathf.Approximately(angle, 0))
             {
                 Debug.Log("Up");
+                playerIsOnObstacle = true;
             }
             if(Mathf.Approximately(angle, 180))
             {
@@ -130,7 +129,18 @@ public class Player : MonoBehaviour
                     Debug.Log("GAME OVER!");
                 }
             }
-            
+        }
+    }
+
+    void OnCollisionExit2D(Collision2D collision)
+    {
+        if(collision.gameObject.tag.Equals("Obstacle"))
+        {
+            if(playerIsOnObstacle)
+            {
+                Debug.Log("Player exited obstacle");
+                playerIsOnObstacle = false;
+            }
         }
     }
 
@@ -189,8 +199,9 @@ public class Player : MonoBehaviour
         if((currentLane.LaneYPosition <= rigidBody.transform.position.y && isUpper) || (currentLane.LaneYPosition >= rigidBody.transform.position.y && !isUpper))
         {
             isInSwitchMode = false;
-            rigidBody.transform.position = new Vector3(rigidBody.transform.position.x, currentLane.LaneYPosition, 0);
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
+            rigidBody.transform.position = new Vector3(rigidBody.transform.position.x, currentLane.LaneYPosition, 0);
+
         }
         else
         {
@@ -239,29 +250,38 @@ public class Player : MonoBehaviour
 
     void evaluatedCombi()
     {
-        if(combiKeyList.Contains(KeyCode.Space))
+        // When player is on a lane and not jumping already or 
+        // player is on an obstacle (while in jumpmode because we are not on the lane itself) 
+        // the player is able to jump
+        if(!isInJumpMode | playerIsOnObstacle)
         {
-            checkJumpWithVelocity();
-            Debug.Log(combiKeyList.Count);
-            if(combiKeyList.Contains(KeyCode.X))
+            if(combiKeyList.Contains(KeyCode.Space))
             {
-                Debug.Log("Combi!");
+                checkJumpWithVelocity();
                 Debug.Log(combiKeyList.Count);
+                if(combiKeyList.Contains(KeyCode.X))
+                {
+                    Debug.Log("Combi!");
+                    Debug.Log(combiKeyList.Count);
+                }
             }
         }
-        if(combiKeyList.Contains(KeyCode.UpArrow))
+        if(!isInSwitchMode)
         {
-            checkSwitchLanes(KeyCode.UpArrow);
-        }
-        else if(combiKeyList.Contains(KeyCode.DownArrow))
-        {
-            checkSwitchLanes(KeyCode.DownArrow);
+            if(combiKeyList.Contains(KeyCode.UpArrow))
+            {
+                checkSwitchLanes(KeyCode.UpArrow);
+            }
+            else if(combiKeyList.Contains(KeyCode.DownArrow))
+            {
+                checkSwitchLanes(KeyCode.DownArrow);
+            }
         }
     }
 
     void doJump()
     {
-        if((Input.GetKeyUp(KeyCode.Space) | jumpTime > buttonTime) && Mathf.Abs((Mathf.Abs(jumpStartPosition) - Mathf.Abs(rigidBody.transform.position.y))) >= minHeight && rigidBody.transform.position.y != currentLane.LaneYPosition)
+        if((!Input.GetKey(KeyCode.Space) | jumpTime > buttonTime) && Mathf.Abs((Mathf.Abs(jumpStartPosition) - Mathf.Abs(rigidBody.transform.position.y))) >= minHeight && rigidBody.transform.position.y != currentLane.LaneYPosition)
         {
             isJumpingUp = false;
             rigidBody.gravityScale = jumpGravityUp;
@@ -281,12 +301,12 @@ public class Player : MonoBehaviour
                 GetComponent<BoxCollider2D>().enabled = false;
             }
         }
-        if(rigidBody.transform.position.y <= currentLane.LaneYPosition && isInJumpMode && !isJumpingUp)
+        if((rigidBody.transform.position.y <= currentLane.LaneYPosition) && isInJumpMode && !isJumpingUp)
         {
+            isInJumpMode = false;
             rigidBody.gravityScale = 0;
             rigidBody.velocity = new Vector2(rigidBody.velocity.x, 0);
             rigidBody.transform.position = new Vector3(rigidBody.transform.position.x, currentLane.LaneYPosition, 0);
-            isInJumpMode = false;
         }
     }
 
