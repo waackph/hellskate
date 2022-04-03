@@ -23,5 +23,6 @@ public class CameraController : MonoBehaviour
         // Vector3 currentPosition = GetComponent<Transform>().position;
         // GetComponent<Transform>().position = new Vector3(GetComponent<Transform>().position.x + cameraSpeed * Time.deltaTime, currentPosition.y, currentPosition.z);
         GetComponent<Transform>().Translate(new Vector3(cameraSpeed, 0, 0) * Time.deltaTime);
+        GetComponent<Transform>().position = new Vector3(GetComponent<Transform>().position.x, 0, GetComponent<Transform>().position.z);
     }
 }
