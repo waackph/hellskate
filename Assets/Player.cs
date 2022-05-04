@@ -17,6 +17,7 @@ public class Player : MonoBehaviour
 
     Rigidbody2D rigidBody;
     SpriteRenderer spriteRenderer;
+    Animator animator;
 
     Lane currentLane;
 
@@ -41,6 +42,7 @@ public class Player : MonoBehaviour
         combiKeyList = new List<KeyCode>();
         rigidBody = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        animator = GetComponent<Animator>();
         currentLane = laneSystem.GetComponent<LaneController>().CurrentLane;
         jumpStartPosition = currentLane.LaneYPosition;
         HandleLaneCollision(currentLane.Name);
@@ -53,6 +55,7 @@ public class Player : MonoBehaviour
         {
             checkAnyKeyPressed();
         }
+        animator.SetBool("IsJumping", isInJumpMode);
     }
 
     void FixedUpdate()
