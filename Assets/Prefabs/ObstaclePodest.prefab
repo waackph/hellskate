@@ -10,10 +10,10 @@ GameObject:
   m_Component:
   - component: {fileID: 561024409559265348}
   - component: {fileID: 3166043649677149183}
-  - component: {fileID: 297570666042418785}
+  - component: {fileID: 3678455344319384182}
   m_Layer: 0
   m_Name: ObstaclePodest
-  m_TagString: Untagged
+  m_TagString: Obstacle
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -83,8 +83,8 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
---- !u!60 &297570666042418785
-PolygonCollider2D:
+--- !u!61 &3678455344319384182
+BoxCollider2D:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -96,7 +96,7 @@ PolygonCollider2D:
   m_IsTrigger: 0
   m_UsedByEffector: 0
   m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0.019674778, y: -0.2688824}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
@@ -106,24 +106,6 @@ PolygonCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Points:
-    m_Paths:
-    - - {x: 1.49, y: -0.19}
-      - {x: 1.52, y: -0.099999994}
-      - {x: 1.67, y: 0.19999999}
-      - {x: 1.6999999, y: 0.29}
-      - {x: 1.79, y: 0.47}
-      - {x: 1.8, y: 0.5}
-      - {x: 1.8, y: 0.83}
-      - {x: -0.96, y: 0.83}
-      - {x: -1.01, y: 0.78}
-      - {x: -1.0699999, y: 0.7}
-      - {x: -1.79, y: -0.38}
-      - {x: -1.8, y: -0.41}
-      - {x: -1.8, y: -0.77}
-      - {x: 1.12, y: -0.77}
-      - {x: 1.13, y: -0.79999995}
-      - {x: 1.18, y: -0.79999995}
-      - {x: 1.22, y: -0.76}
-      - {x: 1.3399999, y: -0.52}
-      - {x: 1.37, y: -0.42999998}
+  serializedVersion: 2
+  m_Size: {x: 2.852376, y: 0.947446}
+  m_EdgeRadius: 0

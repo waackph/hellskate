@@ -119,7 +119,7 @@ public class Player : MonoBehaviour
             if(Mathf.Approximately(angle, 180))
             {
                 Debug.Log("Down");
-                Debug.Log("GAME OVER!");
+                GameOver();
             }
             if(Mathf.Approximately(angle, 90))
             {
@@ -132,17 +132,25 @@ public class Player : MonoBehaviour
                 if(perpendicularVec.y > 0)
                 {
                     Debug.Log("Right");
-                    Debug.Log("GAME OVER!");
+                    GameOver();
                 }
                 else
                 {
                     Debug.Log("Left");
-                    Debug.Log("GAME OVER!");
+                    GameOver();
                 }
             }
         }
+        else if(collision.gameObject.tag.Equals("DeadlyObstacle"))
         {
+            GameOver();
         }
+    }
+
+    void GameOver()
+    {
+        levelLoader.GetComponent<LevelLoader>().LoadMenu();
+        GlobalVars.CurrentGameState = GlobalVars.GameState.Loose;
     }
 
     void OnTriggerEnter2D(Collider2D col) 
@@ -156,6 +164,8 @@ public class Player : MonoBehaviour
         if(col.gameObject.tag.Equals("Finish"))
         {
             // TODO: Load Menu with new score
+            levelLoader.GetComponent<LevelLoader>().LoadMenu();
+            GlobalVars.CurrentGameState = GlobalVars.GameState.Win;
         }
      }
 
