@@ -1,6 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>Class <c>Player</c> handles player movement 
+/// ability to ollie (jump), collision with obstacles, 
+/// ability to do combinations of tricks, switching between lanes.
+/// </summary>
+
 public class Player : MonoBehaviour
 {
     [SerializeField] GameObject laneSystem;
