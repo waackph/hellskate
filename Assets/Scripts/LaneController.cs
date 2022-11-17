@@ -1,6 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+
+/// <summary>Class <c>LaneController</c> initilizes three lanes and handles the current lane the player uses
+/// and switching the lane.
+/// The script also includes the class <c>Lane</c> which models a lane in the level.</summary>
+///
 
 public class LaneController : MonoBehaviour
 {
@@ -55,7 +58,8 @@ public class LaneController : MonoBehaviour
     }
 }
 
-
+/// <summary>Class <c>Lane</c> models a lane in the level.</summary>
+///
 public class Lane
 {
     public string Name;

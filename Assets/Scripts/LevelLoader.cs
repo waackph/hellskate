@@ -1,20 +1,15 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-
 using UnityEngine.SceneManagement;
 
+/// <summary>Class <c>LevelLoader</c> handles loading scenes which are levels or menus.
+/// It also plays an animation while switching scenes.</summary>
+///
 public class LevelLoader : MonoBehaviour
 {
 
     public Animator transition;
     public float transitionSeconds = 1f;
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 
     public void LoadNextLevel()
     {
