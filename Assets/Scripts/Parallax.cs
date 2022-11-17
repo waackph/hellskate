@@ -1,7 +1,10 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>Class <c>Parallax</c> moves a background sprite by a given parameter value for parallex effect.
+/// It furthermore moves part of the background sprite to the end, before the camera leaves the sprite.
+/// It also replaces the ending part of the sprite 
+/// by a alternative (for ending) after a given amount of iterations</summary>
+///
 public class Parallax : MonoBehaviour
 {
     private float length, startpos;
@@ -47,6 +50,7 @@ public class Parallax : MonoBehaviour
         }
     }
 
+    // Replacing second part of background sprite by ending sprite
     void ChangeSpritesToLevelEnding()
     {
         secondPartSprite.SetActive(false);

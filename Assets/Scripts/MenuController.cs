@@ -1,8 +1,9 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>Class <c>MenuController</c> handles loading the menu, given the game state.
+/// It furthermore handles the execution of menu button events.</summary>
+///
 public class MenuController : MonoBehaviour
 {
     public Button StartButton;

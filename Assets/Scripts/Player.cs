@@ -1,11 +1,8 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour
 {
-
     [SerializeField] GameObject laneSystem;
     [SerializeField] float movementSpeed;
     [SerializeField] float moveImpact;
@@ -90,17 +87,30 @@ public class Player : MonoBehaviour
         }
     }
 
-    void checkAnyKeyPressed()
+    // Trigger menu loading with game over text (in case of colliding with a deadly obstacle)
+    void GameOver()
     {
-        if(Input.anyKey)
+        levelLoader.GetComponent<LevelLoader>().LoadMenu();
+        GlobalVars.CurrentGameState = GlobalVars.GameState.Loose;
+    }
+
+    // Handle general player movement - continuous speed or decrease of increase in speed.
+    void movePlayer()
+    {
+        // Only when the first level (street) is finished, the protagonist should fall down (the hole)
+        // therefore the velocity should change and decrease in the y value.
+        if(levelIsFinished)
         {
-            // Initilize combi mode start
-            combiTime = 0f;
-            isInCombiMode = true;
-            combiKeyList.Clear();
-            checkForCombi();
+            rigidBody.velocity = new Vector2(rigidBody.velocity.x, -movementSpeed);
+        }
+        else
+        {
+            float moveX = Input.GetAxis("Horizontal");
+            rigidBody.velocity = new Vector2(movementSpeed + moveX * moveImpact, rigidBody.velocity.y);
         }
     }
+
+    // ----------- Collision related code
 
     void OnCollisionEnter2D(Collision2D collision)
     {
@@ -147,12 +157,6 @@ public class Player : MonoBehaviour
         }
     }
 
-    void GameOver()
-    {
-        levelLoader.GetComponent<LevelLoader>().LoadMenu();
-        GlobalVars.CurrentGameState = GlobalVars.GameState.Loose;
-    }
-
     void OnTriggerEnter2D(Collider2D col) 
     {
         if(col.gameObject.tag.Equals("NextLevel"))
@@ -181,18 +185,7 @@ public class Player : MonoBehaviour
         }
     }
 
-    void movePlayer()
-    {
-        if(levelIsFinished)
-        {
-            rigidBody.velocity = new Vector2(rigidBody.velocity.x, -movementSpeed);
-        }
-        else
-        {
-            float moveX = Input.GetAxis("Horizontal");
-            rigidBody.velocity = new Vector2(movementSpeed + moveX * moveImpact, rigidBody.velocity.y);
-        }
-    }
+    // ----------- Lane switch related code
 
     void checkSwitchLanes(KeyCode key)
     {
@@ -218,27 +211,7 @@ public class Player : MonoBehaviour
     void HandleLaneCollision(string currentLayer)
     {
         spriteRenderer.sortingLayerName = currentLayer;
-        if(currentLayer == "Lane1")
-        {
-            gameObject.layer = LayerMask.NameToLayer("Lane1");
-            // Physics2D.IgnoreLayerCollision(0, 6, false);
-            // Physics2D.IgnoreLayerCollision(0, 7, true);
-            // Physics2D.IgnoreLayerCollision(0, 8, true);
-        }
-        else if(currentLayer == "Lane2")
-        {
-            gameObject.layer = LayerMask.NameToLayer("Lane2");
-            // Physics2D.IgnoreLayerCollision(0, 6, true);
-            // Physics2D.IgnoreLayerCollision(0, 7, false);
-            // Physics2D.IgnoreLayerCollision(0, 8, true);
-        }
-        else if(currentLayer == "Lane3")
-        {
-            gameObject.layer = LayerMask.NameToLayer("Lane3");
-            // Physics2D.IgnoreLayerCollision(0, 6, true);
-            // Physics2D.IgnoreLayerCollision(0, 7, true);
-            // Physics2D.IgnoreLayerCollision(0, 8, false);
-        }
+        gameObject.layer = LayerMask.NameToLayer(currentLayer);
     }
 
     void doMoveToLane()
@@ -259,13 +232,18 @@ public class Player : MonoBehaviour
         }
     }
 
-    void checkJumpWithVelocity()
+    // ----------- Combinations related code
+
+    void checkAnyKeyPressed()
     {
-        // Initilize jump start
-        isJumpingUp = true;
-        isInJumpMode = true;
-        jumpTime = 0;
-        jumpStartPosition = rigidBody.transform.position.y;
+        if(Input.anyKey)
+        {
+            // Initilize combi mode start
+            combiTime = 0f;
+            isInCombiMode = true;
+            combiKeyList.Clear();
+            checkForCombi();
+        }
     }
 
     void checkForCombi()
@@ -326,6 +304,17 @@ public class Player : MonoBehaviour
         }
     }
 
+    // ----------- Jump related code
+
+    void checkJumpWithVelocity()
+    {
+        // Initilize jump start
+        isJumpingUp = true;
+        isInJumpMode = true;
+        jumpTime = 0;
+        jumpStartPosition = rigidBody.transform.position.y;
+    }
+
     void doJump()
     {
         if((!Input.GetKey(KeyCode.Space) | jumpTime > buttonTime) && Mathf.Abs((Mathf.Abs(jumpStartPosition) - Mathf.Abs(rigidBody.transform.position.y))) >= minHeight && rigidBody.transform.position.y != currentLane.LaneYPosition)
@@ -357,6 +346,7 @@ public class Player : MonoBehaviour
         }
     }
 
+    // Deprecated
     void jumpWithForce()
     {
         if (Input.GetKeyDown(KeyCode.Space) && !isJumpingUp)
